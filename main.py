@@ -2,12 +2,9 @@ import ctypes
 import math
 import time
 from array import *
-import numpy as np
-#import tensorflow
 import cv2
 import mediapipe as mp
 import pyautogui
-#from tensorflow.keras.models import load_model
 
 user32 = ctypes.windll.user32
 resx = user32.GetSystemMetrics(0) * 1.3
@@ -57,14 +54,20 @@ def main():
         if results.multi_hand_landmarks:
             hand_landmarks = results.multi_hand_landmarks[0]
             count = 0
-            mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS, mp_drawing_styles.get_default_hand_landmarks_style(), mp_drawing_styles.get_default_hand_connections_style())
-            temp_landmark = hand_landmarks.landmark[5]
+            mp_drawing.draw_landmarks(
+                image, 
+                hand_landmarks, 
+                mp_hands.HAND_CONNECTIONS, 
+                mp_drawing_styles.get_default_hand_landmarks_style(), 
+                mp_drawing_styles.get_default_hand_connections_style()
+            )
             findPos(hand_landmarks)
             if posStop - posStart > 0.3:
+                temp_landmark = hand_landmarks.landmark[5]
                 oldPos = findPos(temp_landmark)
                 posStart = posStop
             posStop = time.perf_counter()
-            if not aimAssist(pos, oldPos):
+            if not aimAssist(pos[5], oldPos):
                 pyautogui.moveTo(pos[5][0], pos[5][1], _pause = False)
             start = checkGestures(start)
                     
@@ -86,13 +89,11 @@ def findPos(joints):
     except:
         return findCoords(joints)
 
-    
-
 def aimAssist(pos, oldPos):
-    if (oldPos[1] - pos[5][1] > 12 or oldPos[1] - pos[5][1] < -12) and (oldPos[0] - pos[5][0] > 12 or oldPos[0] - pos[5][0] < -12):
+    distance = math.sqrt((oldPos[0] - pos[0]) ** 2 + (oldPos[1] - pos[1]) ** 2)
+    if (distance > 12):
         return False
-    else:
-        return True
+    return True
     
 def checkGestures(start):
     global middleDown, answ
@@ -114,7 +115,7 @@ def checkGestures(start):
             pyautogui.mouseUp(button='left')
         return time.perf_counter()
 
-    if (pos[4][0] - pos[20][0] < 50 and pos[4][0] - pos[20][0] > -50) and (pos[4][1] - pos[20][1] < 50 and pos[4][1] - pos[20][1] > -50):
+    if (math.sqrt((pos[4][0] - pos[20][0]) ** 2 + (pos[4][1] - pos[20][1]) ** 2) < 50):
         pyautogui.hotkey("win", "tab", interval = 0.1)
 
     if pos[16][1] > pos[14][1]:
